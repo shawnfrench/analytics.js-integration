@@ -4,6 +4,8 @@ describe('integration', function () {
   var assert = require('assert');
   var equal = require('equals');
   var createIntegration = require('integration');
+  var Identify = require('facade').Identify;
+  var Track = require('facade').Track;
   var sinon = require('sinon');
   var tick = require('next-tick');
 
@@ -241,13 +243,14 @@ describe('integration', function () {
 
   describe('#invoke', function () {
     beforeEach(function () {
+      integration.identify = sinon.spy();
       integration.track = sinon.spy();
       integration.queue = sinon.spy();
       integration.page = function () { throw new Error(); };
-    });
+    })
 
     it('should do nothing if the method does not exist', function () {
-      integration.invoke('identify', 'id');
+      integration.invoke('baz', 'id');
       assert(!integration.queue.called);
       assert(!integration.track.called);
     });
@@ -257,10 +260,16 @@ describe('integration', function () {
       assert(integration.queue.calledWith('track', ['event']));
     });
 
+    it('should call .track with (Track, options, callback)', function(){
+      integration.emit('ready');
+      integration.invoke('track', '')
+    })
+
     it('should call the method if the integration is ready', function () {
+      assert(!integration.track.called);
       integration.emit('ready');
       integration.invoke('track', 'event');
-      assert(integration.track.calledWith('event'));
+      assert(integration.track.called);
     });
 
     it('should catch errors when it calls', function () {
@@ -327,5 +336,32 @@ describe('integration', function () {
       assert(undefined === window.two);
     });
   });
+
+  describe('facade', function(){
+    beforeEach(function () {
+      integration.identify = sinon.spy();
+      integration.track = sinon.spy();
+    })
+
+    it('should call .identify with (Identify, options, callback)', function(){
+      integration.emit('ready');
+      integration.invoke('identify', 'uid', { first_name: 'baz' }, { opt: 0 });
+      var call = integration.identify.getCall(0);
+      assert(call.args[0] instanceof Identify);
+      assert('uid' == call.args[0].userId());
+      assert('baz' == call.args[0].firstName());
+      assert(0 == call.args[1].opt);
+    })
+
+    it('should call .track with (Track, options, callback)', function(){
+      integration.emit('ready');
+      integration.invoke('track', 'event', { Referrer: 'baz' }, { opt: 0 });
+      var call = integration.track.getCall(0);
+      assert(call.args[0] instanceof Track);
+      assert('event' == call.args[0].event());
+      assert('baz' == call.args[0].referrer());
+      assert(0 == call.args[1].opt);
+    })
+  })
 
 });
