@@ -5,7 +5,7 @@
   "version": "0.3.3",
   "keywords": ["analytics.js", "integration", "analytics"],
   "dependencies": {
-    "segmentio/analytics-events": "1.2.0",
+    "shawnfrench/analytics-events": "1.2.0",
     "avetisk/defaults": "0.0.4",
     "component/assert": "*",
     "component/clone": "0.1.0",
